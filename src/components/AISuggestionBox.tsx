@@ -1,28 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import type { AIHints, AISuggestions } from "@/lib/types";
+import type { AIHints, MnemonicSuggestions } from "@/lib/types";
 
 interface AISuggestionBoxProps {
   english: string;
   konkani: string;
   onUseMnemonic: (mnemonic: string) => void;
-  onUseImageIdea: (imagePrompt: string) => void;
+  onUseImagePrompt: (imagePrompt: string) => void;
+  onUsePronunciationTip?: (tip: string) => void;
 }
 
 /**
- * Admin AI helper. Generates 3 mnemonics, 3 funny image ideas, and a
- * beginner explanation from the English + Konkani pair. If the admin
- * dislikes the suggestions, they can supply hints (sounds-like word,
- * two objects, a scene idea) and regenerate.
+ * Admin AI helper. Calls the suggestion service (mock by default, OpenAI
+ * when configured) to get 3 mnemonics, 3 visual image prompts, and one
+ * beginner-friendly pronunciation tip. If the admin dislikes the results,
+ * they can supply hints (sounds-like word, two objects, a scene idea)
+ * and regenerate.
  */
 export function AISuggestionBox({
   english,
   konkani,
   onUseMnemonic,
-  onUseImageIdea,
+  onUseImagePrompt,
+  onUsePronunciationTip,
 }: AISuggestionBoxProps) {
-  const [suggestions, setSuggestions] = useState<AISuggestions | null>(null);
+  const [suggestions, setSuggestions] = useState<MnemonicSuggestions | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHints, setShowHints] = useState(false);
@@ -45,7 +48,7 @@ export function AISuggestionBox({
         }),
       });
       if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      setSuggestions((await res.json()) as AISuggestions);
+      setSuggestions((await res.json()) as MnemonicSuggestions);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -103,7 +106,7 @@ export function AISuggestionBox({
         <div className="mt-4 space-y-4 animate-pop-in">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-wider text-mango-deep mb-1.5">
-              🧠 Mnemonic suggestions — tap to use
+              🧠 Mnemonic ideas — tap to use
             </p>
             <ul className="space-y-2">
               {suggestions.mnemonics.map((m, i) => (
@@ -122,14 +125,14 @@ export function AISuggestionBox({
 
           <div>
             <p className="text-xs font-extrabold uppercase tracking-wider text-sea-deep mb-1.5">
-              🎨 Funny image ideas — tap to use
+              🎨 Visual image prompts — tap to use
             </p>
             <ul className="space-y-2">
-              {suggestions.imageIdeas.map((idea, i) => (
+              {suggestions.imagePrompts.map((idea, i) => (
                 <li key={i}>
                   <button
                     type="button"
-                    onClick={() => onUseImageIdea(idea)}
+                    onClick={() => onUseImagePrompt(idea)}
                     className="w-full text-left rounded-xl border-2 border-lagoon/40 bg-lagoon/10 hover:bg-lagoon/25 px-3 py-2 text-sm font-semibold text-ink transition-colors cursor-pointer"
                   >
                     {idea}
@@ -139,14 +142,21 @@ export function AISuggestionBox({
             </ul>
           </div>
 
-          <div className="rounded-xl bg-palm/10 border-2 border-palm/30 px-3 py-2">
-            <p className="text-xs font-extrabold uppercase tracking-wider text-palm-deep mb-1">
-              📖 Beginner explanation
-            </p>
-            <p className="text-sm font-semibold text-ink">
-              {suggestions.explanation}
-            </p>
-          </div>
+          {suggestions.pronunciationTip && (
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-wider text-palm-deep mb-1.5">
+                🔊 Pronunciation tip{onUsePronunciationTip ? " — tap to use" : ""}
+              </p>
+              <button
+                type="button"
+                disabled={!onUsePronunciationTip}
+                onClick={() => onUsePronunciationTip?.(suggestions.pronunciationTip)}
+                className="w-full text-left rounded-xl border-2 border-palm/40 bg-palm/10 hover:bg-palm/20 px-3 py-2 text-sm font-semibold text-ink transition-colors cursor-pointer disabled:cursor-default"
+              >
+                {suggestions.pronunciationTip}
+              </button>
+            </div>
+          )}
 
           <div>
             <button

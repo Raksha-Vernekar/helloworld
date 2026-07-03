@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { generateSuggestions } from "@/lib/ai";
+import { generateMnemonicSuggestions } from "@/lib/aiService";
 import type { AIHints } from "@/lib/types";
 
 /**
  * POST /api/ai/suggest
  * Body: { english: string; konkani: string; hints?: AIHints }
- * Returns: { mnemonics: string[]; imageIdeas: string[]; explanation: string }
+ * Returns: { mnemonics: string[]; imagePrompts: string[]; pronunciationTip: string }
  *
- * Currently backed by the template-based mock in src/lib/ai.ts.
- * Swap the `generateSuggestions` call for a real LLM call to upgrade —
- * the response contract stays the same. See README.md.
+ * Backed by src/lib/aiService.ts: uses the local mock by default and the
+ * OpenAI API automatically when OPENAI_API_KEY is set.
  */
 export async function POST(request: Request) {
   let body: { english?: string; konkani?: string; hints?: AIHints };
@@ -28,6 +27,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const suggestions = generateSuggestions(english, konkani, body.hints);
+  const suggestions = await generateMnemonicSuggestions(english, konkani, body.hints);
   return NextResponse.json(suggestions);
 }

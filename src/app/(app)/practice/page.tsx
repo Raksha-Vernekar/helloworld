@@ -5,24 +5,26 @@ import { LessonCard } from "@/components/LessonCard";
 import { Mascot } from "@/components/Mascot";
 import { useQuest } from "@/components/QuestProvider";
 import { burstConfetti } from "@/lib/confetti";
+import { priorityScore } from "@/lib/spacedRepetition";
 
 /**
- * Practice flow: revisits words the user has already seen (learning or
- * mastered), shuffled, so memories stay fresh. Correct recalls still
- * earn 10 XP.
+ * Practice flow: revisits words the user has already seen, ordered by
+ * spaced-repetition priority — struggling and stale words come first,
+ * mastered words appear less often. Correct recalls still earn 10 XP.
  */
 export default function PracticePage() {
   const { loading, words, progress, completeWord } = useQuest();
   const [round, setRound] = useState(0);
 
   const seenWords = useMemo(() => {
-    const seenIds = new Set(progress.map((p) => p.word_id));
-    const list = words.filter((w) => seenIds.has(w.id));
-    // Deterministic shuffle per round so the card changes on every answer.
+    const entryByWord = new Map(progress.map((p) => [p.word_id, p]));
+    const list = words.filter((w) => entryByWord.has(w.id));
+    // Priority first; per-round hash breaks ties so the deck still varies.
     return [...list].sort((a, b) => {
-      const ha = hashCode(`${a.id}:${round}`);
-      const hb = hashCode(`${b.id}:${round}`);
-      return ha - hb;
+      const sa = priorityScore(a, entryByWord.get(a.id));
+      const sb = priorityScore(b, entryByWord.get(b.id));
+      if (sb !== sa) return sb - sa;
+      return hashCode(`${a.id}:${round}`) - hashCode(`${b.id}:${round}`);
     });
   }, [words, progress, round]);
 

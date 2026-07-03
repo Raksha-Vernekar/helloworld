@@ -27,8 +27,8 @@ words and 8 fun facts. No database or API keys needed:
 | ------------------ | --------------------------------------------------------- |
 | `/`                | Landing page with mascot and CTA                          |
 | `/login`           | Sign in / sign up (Supabase) or continue as guest (demo)  |
-| `/learn`           | Lesson cards: reveal Konkani, mnemonic, image idea, +10 XP |
-| `/practice`        | Shuffled review of words you've already seen              |
+| `/learn`           | 10-word lesson sessions: study → 4-option quiz → +10 XP   |
+| `/practice`        | Spaced-repetition review of words you've already seen     |
 | `/progress`        | XP, streak, mastery bar, word list, unlocked fun facts    |
 | `/admin`           | Admin dashboard (stats + links)                           |
 | `/admin/words`     | Add / edit / delete words, with the AI helper             |
@@ -72,68 +72,41 @@ profile/progress; only admins can write words and fun facts.
 - `progress` — user_id, word_id, status (new/learning/mastered), attempts, last_seen
 - `fun_facts` — fact_text, unlock_points
 
-## Connecting real AI (text + images)
+## AI suggestion service
 
-All AI traffic goes through one server route:
-`src/app/api/ai/suggest/route.ts`, which currently calls the mock generator
-in `src/lib/ai.ts`. The response contract is:
+The service lives in `src/lib/aiService.ts` and exposes one function:
+
+```ts
+generateMnemonicSuggestions(englishWord, konkaniWord, hints?)
+```
+
+It returns:
 
 ```json
 {
-  "mnemonics": ["...", "...", "..."],
-  "imageIdeas": ["...", "...", "..."],
-  "explanation": "..."
+  "mnemonics": ["3 mnemonic ideas"],
+  "imagePrompts": ["3 visual image prompts"],
+  "pronunciationTip": "1 beginner-friendly pronunciation tip"
 }
 ```
 
-Because the admin UI (`AISuggestionBox`) only depends on this contract, you
-can swap in any provider without touching the frontend.
+It is provider-based:
 
-### 1. Real text suggestions (OpenAI example)
+- **Mock provider** (default) — playful template-generated suggestions,
+  deterministic per word pair, zero configuration.
+- **OpenAI provider** — used automatically when `OPENAI_API_KEY` is set in
+  `.env.local` (optionally `OPENAI_MODEL`, default `gpt-4o-mini`). It calls
+  the Chat Completions API with a JSON response format and falls back to
+  the mock if the request fails, so the admin is never left empty-handed.
 
-```bash
-npm install openai
-echo "OPENAI_API_KEY=sk-..." >> .env.local
-```
+The admin UI calls it through `POST /api/ai/suggest` (server-side, so your
+API key never reaches the browser). The "hints" flow (sounds-like word,
+object 1, object 2, scene idea) is passed straight into the provider — the
+mock uses them in its templates and the OpenAI provider adds them to the
+prompt. To add another provider (Anthropic, Gemini, a local model), just
+implement the `SuggestionProvider` interface and swap it in `pickProvider()`.
 
-Replace the `generateSuggestions(...)` call in the route with:
-
-```ts
-import OpenAI from "openai";
-
-const openai = new OpenAI(); // reads OPENAI_API_KEY
-
-const completion = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  response_format: { type: "json_object" },
-  messages: [
-    {
-      role: "system",
-      content:
-        "You create playful memory aids for English speakers learning Konkani. " +
-        'Reply as JSON: {"mnemonics": [3 strings], "imageIdeas": [3 strings], "explanation": string}.',
-    },
-    {
-      role: "user",
-      content:
-        `English: ${english}\nKonkani: ${konkani}\n` +
-        (body.hints
-          ? `Admin hints — sounds like: ${body.hints.soundsLike ?? "-"}, ` +
-            `object 1: ${body.hints.object1 ?? "-"}, object 2: ${body.hints.object2 ?? "-"}, ` +
-            `scene: ${body.hints.sceneIdea ?? "-"}`
-          : ""),
-    },
-  ],
-});
-
-const suggestions = JSON.parse(completion.choices[0].message.content!);
-```
-
-The admin "hints" flow (sounds-like word, object 1, object 2, scene idea)
-already sends those fields to the route — just include them in the prompt as
-above.
-
-### 2. Real generated images
+### Real generated images
 
 Add a second route, e.g. `src/app/api/ai/image/route.ts`, that takes an
 `image_prompt` and returns an image URL:
@@ -147,11 +120,29 @@ and save its public URL into `words.image_url`. Recommended flow: put a
 that calls the new route and fills `image_url` automatically. Until then,
 placeholder URLs from [placehold.co](https://placehold.co) work fine.
 
-## Game rules
+## Learning flow & game rules
 
-- **+10 XP** for every word completed with "I remembered it".
-- "Practice again" keeps the word in rotation without awarding XP.
-- Words progress `new → learning → mastered` (two successful recalls).
+Each `/learn` session picks up to **10 words** by spaced-repetition
+priority (`src/lib/spacedRepetition.ts`). Every word goes through:
+
+1. See the English word and image — take a mental guess
+2. **Reveal Konkani** — word + pronunciation
+3. Read the mnemonic and image idea
+4. **Quiz**: "Which is the Konkani word for X?" with 4 options
+5. Instant feedback — green confetti when right, gentle encouragement
+   (and the correct answer) when wrong
+6. **+10 XP only when correct**
+
+Spaced repetition rules:
+
+- Wrong answers are re-inserted a couple of cards later in the same
+  session, and drop the word back to `learning` so it returns sooner in
+  future sessions.
+- New words get top priority; `learning` words bubble up the longer
+  they've been unseen; `mastered` words appear rarely and only drift back
+  as they go stale.
+- A word reaches `mastered` after a clean first-try correct answer on a
+  word already in `learning`.
 - Every **50 XP** unlocks the next fun fact, with a confetti celebration.
 - Practicing on consecutive days grows your **🔥 streak**; missing a day
   resets it.

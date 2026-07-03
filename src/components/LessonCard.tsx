@@ -8,18 +8,29 @@ import { MnemonicBox } from "./MnemonicBox";
 
 interface LessonCardProps {
   word: Word;
-  onRemembered: () => void;
-  onPracticeAgain: () => void;
+  /**
+   * Study mode (lesson sessions): shows one "quiz me" button after reveal.
+   * When provided, `onRemembered`/`onPracticeAgain` are ignored.
+   */
+  onContinue?: () => void;
+  onRemembered?: () => void;
+  onPracticeAgain?: () => void;
 }
 
 /**
- * The core learning card. Front: image + English word + reveal button.
- * Back: Konkani word, pronunciation, mnemonic, image idea, and the two
- * big action buttons.
+ * The core learning card. Front: image + English word + reveal button
+ * ("guess mentally first!"). Back: Konkani word, pronunciation, mnemonic,
+ * image idea, then either a continue-to-quiz button (study mode) or the
+ * remembered/practice pair (practice mode).
  *
  * Render with `key={word.id}` so the card resets when the word changes.
  */
-export function LessonCard({ word, onRemembered, onPracticeAgain }: LessonCardProps) {
+export function LessonCard({
+  word,
+  onContinue,
+  onRemembered,
+  onPracticeAgain,
+}: LessonCardProps) {
   const [revealed, setRevealed] = useState(false);
 
   return (
@@ -52,7 +63,12 @@ export function LessonCard({ word, onRemembered, onPracticeAgain }: LessonCardPr
         </div>
 
         {!revealed ? (
-          <RevealButton onReveal={() => setRevealed(true)} />
+          <div className="space-y-2">
+            <p className="text-center text-sm font-semibold text-ink-soft">
+              🤔 Take a guess in your head first…
+            </p>
+            <RevealButton onReveal={() => setRevealed(true)} />
+          </div>
         ) : (
           <div className="animate-flip-reveal space-y-4">
             <div className="rounded-2xl bg-gradient-to-br from-sea to-lagoon text-white text-center py-5 px-4 shadow-inner">
@@ -80,22 +96,32 @@ export function LessonCard({ word, onRemembered, onPracticeAgain }: LessonCardPr
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {onContinue ? (
               <button
                 type="button"
-                onClick={onRemembered}
-                className="btn-chunky bg-palm border-palm-deep text-white text-base font-extrabold py-4 px-4 shadow-lg cursor-pointer"
+                onClick={onContinue}
+                className="btn-chunky w-full bg-mango border-mango-deep text-ink text-lg font-extrabold py-4 px-6 shadow-lg cursor-pointer"
               >
-                ✅ I remembered it
+                🎯 Got it — quiz me!
               </button>
-              <button
-                type="button"
-                onClick={onPracticeAgain}
-                className="btn-chunky bg-coral border-coral-deep text-white text-base font-extrabold py-4 px-4 shadow-lg cursor-pointer"
-              >
-                🔁 Practice again
-              </button>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={onRemembered}
+                  className="btn-chunky bg-palm border-palm-deep text-white text-base font-extrabold py-4 px-4 shadow-lg cursor-pointer"
+                >
+                  ✅ I remembered it
+                </button>
+                <button
+                  type="button"
+                  onClick={onPracticeAgain}
+                  className="btn-chunky bg-coral border-coral-deep text-white text-base font-extrabold py-4 px-4 shadow-lg cursor-pointer"
+                >
+                  🔁 Practice again
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

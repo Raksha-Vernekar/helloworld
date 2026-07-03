@@ -44,10 +44,10 @@ export interface ProgressEntry {
   last_seen: string;
 }
 
-export interface AISuggestions {
+export interface MnemonicSuggestions {
   mnemonics: string[];
-  imageIdeas: string[];
-  explanation: string;
+  imagePrompts: string[];
+  pronunciationTip: string;
 }
 
 export interface AIHints {
@@ -78,3 +78,4 @@ export const DIFFICULTIES: Difficulty[] = [
 
 export const POINTS_PER_WORD = 10;
 export const FUN_FACT_INTERVAL = 50;
+export const SESSION_SIZE = 10;

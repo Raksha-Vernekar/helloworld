@@ -216,7 +216,8 @@ export function AdminWordForm({ initial, funFacts, onSubmit, onCancel }: AdminWo
         english={values.english_word}
         konkani={values.konkani_word}
         onUseMnemonic={(m) => set("mnemonic", m)}
-        onUseImageIdea={(idea) => set("image_prompt", idea)}
+        onUseImagePrompt={(idea) => set("image_prompt", idea)}
+        onUsePronunciationTip={(tip) => set("pronunciation", tip)}
       />
 
       {error && <p className="text-sm font-bold text-coral-deep">{error}</p>}
