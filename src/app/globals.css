@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+:root {
+  /* Tropical / coastal palette */
+  --sand: #fff8ec;
+  --sand-deep: #ffefd4;
+  --sea: #0891b2;
+  --sea-deep: #0e7490;
+  --lagoon: #06b6d4;
+  --palm: #16a34a;
+  --palm-deep: #15803d;
+  --coral: #ff6f61;
+  --coral-deep: #e85546;
+  --mango: #ffb020;
+  --mango-deep: #f59e0b;
+  --ink: #1e3a3a;
+  --ink-soft: #4b6b6b;
+}
+
+@theme inline {
+  --color-sand: var(--sand);
+  --color-sand-deep: var(--sand-deep);
+  --color-sea: var(--sea);
+  --color-sea-deep: var(--sea-deep);
+  --color-lagoon: var(--lagoon);
+  --color-palm: var(--palm);
+  --color-palm-deep: var(--palm-deep);
+  --color-coral: var(--coral);
+  --color-coral-deep: var(--coral-deep);
+  --color-mango: var(--mango);
+  --color-mango-deep: var(--mango-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-baloo);
+}
+
+body {
+  background: var(--sand);
+  color: var(--ink);
+  font-family: var(--font-nunito), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-baloo), var(--font-nunito), system-ui, sans-serif;
+}
+
+/* ---- Playful animations ---- */
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(12px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes flip-reveal {
+  0% {
+    opacity: 0;
+    transform: rotateX(-70deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateX(0);
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes progress-shine {
+  0% {
+    background-position: -100px 0;
+  }
+  100% {
+    background-position: 200px 0;
+  }
+}
+
+.animate-pop-in {
+  animation: pop-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.animate-float {
+  animation: float-y 3s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 1.2s ease-in-out infinite;
+}
+
+.animate-flip-reveal {
+  animation: flip-reveal 0.5s ease-out both;
+  transform-origin: top center;
+}
+
+.animate-sparkle {
+  animation: sparkle 1.6s ease-in-out infinite;
+}
+
+/* Big friendly button base */
+.btn-chunky {
+  border-radius: 1.25rem;
+  border-bottom-width: 4px;
+  transition:
+    transform 0.1s ease,
+    filter 0.15s ease,
+    border-bottom-width 0.1s ease;
+}
+
+.btn-chunky:active {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+}
+
+.btn-chunky:hover {
+  filter: brightness(1.05);
+}
